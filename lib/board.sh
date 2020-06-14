@@ -7,6 +7,9 @@ board_mountpoint_defaults ( ) {
     if [ -z "${BOARD_UFS_MOUNTPOINT_PREFIX}" ]; then
         BOARD_UFS_MOUNTPOINT_PREFIX=${WORKDIR}/_.mount.ufs
     fi
+    if [ -z "${BOARD_SWAP_MOUNTPOINT_PREFIX}" ]; then
+        BOARD_SWAP_MOUNTPOINT_PREFIX=${WORKDIR}/_.mount.swap
+    fi
     if [ -z "${BOARD_FREEBSD_MOUNTPOINT_PREFIX}" ]; then
         BOARD_FREEBSD_MOUNTPOINT_PREFIX=${WORKDIR}/_.mount.freebsd
     fi
@@ -56,11 +59,13 @@ board_generate_image_name ( ) {
     if [ ! -z "${IMGNAME}" ]; then
 	eval IMG=${_IMGDIR}/${IMGNAME}
     fi
+
     if [ -z "${IMG}" ]; then
+	DATE=`date +%Y%m%d` 
         if [ -z "${SOURCE_VERSION}" ]; then
-           IMG=${_IMGDIR}/FreeBSD-${TARGET_ARCH}-${FREEBSD_MAJOR_VERSION}-${KERNCONF}-${BOARDNAME}.img
+           IMG=${_IMGDIR}/FreeBSD-${TARGET_ARCH}-${FREEBSD_VERSION}-${KERNCONF}-${BOARDNAME}-${DATE}.img
 	else
-           IMG=${_IMGDIR}/FreeBSD-${TARGET_ARCH}-${FREEBSD_VERSION}-${KERNCONF}-${SOURCE_VERSION}-${BOARDNAME}.img
+           IMG=${_IMGDIR}/FreeBSD-${TARGET_ARCH}-${FREEBSD_VERSION}-${KERNCONF}-${BOARDNAME}-${SOURCE_VERSION}-${DATE}.img
 	fi
     fi
     echo "Image name is:"
@@ -80,7 +85,7 @@ PRIORITY=200 strategy_add $PHASE_POST_CONFIG board_generate_image_name
 board_overlay_files ( ) {
     if [ -d $1/overlay ]; then
         echo "Overlaying board-specific files from $1/overlay"
-        (cd $1/overlay; find . | cpio -pmud ${BOARD_FREEBSD_MOUNTPOINT})
+        (cd $1/overlay; tar cf - . | tar xf - -C ${BOARD_FREEBSD_MOUNTPOINT})
     fi
 }
 
@@ -149,7 +154,6 @@ board_default_installkernel ( ) {
 # into different places (e.g., separate firmware or
 # separate partition).
 
-
 board_default_goodbye ( ) {
     echo "DONE."
     echo "Completed disk image is in: ${IMG}"
@@ -160,7 +164,6 @@ board_default_goodbye ( ) {
     echo
 }
 strategy_add $PHASE_GOODBYE_LWW board_default_goodbye
-
 
 # $1: absolute index of partition
 board_is_boot_partition ( ) {
@@ -273,7 +276,6 @@ board_fat_mountpoint ( ) {
     local ABSINDEX
     
     ABSINDEX=`disk_get_var FAT ${RELINDEX:-1} ABSINDEX`
-
     board_mountpoint ${ABSINDEX}
 }
 
@@ -284,7 +286,6 @@ board_ufs_mountpoint ( ) {
     local ABSINDEX
     
     ABSINDEX=`disk_get_var UFS ${RELINDEX:-1} ABSINDEX`
-
     board_mountpoint ${ABSINDEX}
 }
 

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+echo
+echo \# sysctl dev.cpu.0.freq
+sysctl dev.cpu.0.freq
+
+echo
+echo \# sysctl dev.cpu.0
+sysctl dev.cpu.0
+echo
+
+echo \# sysctl hw.temperature.CPU
+sysctl hw.temperature.CPU
+echo
+
+echo \# sysctl hw.temperature.GPU
+sysctl hw.temperature.GPU
+echo
+

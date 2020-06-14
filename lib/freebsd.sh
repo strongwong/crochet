@@ -344,10 +344,18 @@ freebsd_ubldr_build ( ) {
     rm -rf ${UBLDR_DIR}/boot
     mkdir -p ${UBLDR_DIR}/boot/defaults
 
-    cd stand
-    eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
-    eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
-    eval $buildenv make "$@" -m $ubldr_makefiles depend >> ${LOGFILE} 2>&1
+    if [ -d stand ] ; then
+	cd stand
+	eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
+	eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
+	eval $buildenv make "$@" -m $ubldr_makefiles depend >> ${LOGFILE} 2>&1
+    else
+	cd sys/boot
+	eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
+	eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
+	eval $buildenv make "$@" -m $ubldr_makefiles all >> ${LOGFILE} 2>&1
+    fi
+
     if /bin/sh -e ${UBLDR_DIR}/_.ubldr.${CONF}.sh >> ${LOGFILE} 2>&1
     then
         cd arm/uboot

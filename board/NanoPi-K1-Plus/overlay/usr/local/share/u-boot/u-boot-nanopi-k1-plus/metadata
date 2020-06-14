@@ -1,0 +1,4 @@
+METHOD=uboot-raw
+FILES="u-boot-sunxi-with-spl.bin"
+OFFSET=8
+BS=1k

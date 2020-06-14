@@ -1,0 +1,5 @@
+#!/bin/sh
+
+dd if=/dev/mmcsd0s2a of=/dev/null bs=32m count=32
+dd if=/dev/zero  of=/usr/test.img bs=32m count=32
+

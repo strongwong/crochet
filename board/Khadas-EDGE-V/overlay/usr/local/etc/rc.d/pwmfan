@@ -1,0 +1,32 @@
+#!/bin/sh
+# PWMFAN - rc.d script to control RK3399 PWM fan
+# PROVIDE: pwmfan
+# REQUIRE: DAEMON
+
+# Enable this script by adding:
+# pwmfan_enable="YES"
+# ... to /etc/rc.conf
+
+. /etc/rc.subr
+
+# Set the default
+: ${pwmfan_enable:="NO"}
+: ${pwmfan_model:="khadas-edge"}
+: ${pwmfan_runuser:="operator"}
+
+name="pwmfan"
+rcvar="pwmfan_enable"
+
+# This is the tool init launches
+command="/usr/sbin/daemon"
+pidfile="/var/run/${name}.pid"
+
+# This is the tool daemon launches
+task="/usr/local/sbin/fan.sh"
+procname="/bin/sh"
+
+command_args="-f -p ${pidfile} -u ${pwmfan_runuser} ${task} -m ${pwmfan_model}"
+
+load_rc_config $name
+run_rc_command "$1"
+

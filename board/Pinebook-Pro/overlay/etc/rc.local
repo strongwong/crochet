@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo 0 > /dev/led/green:power
+
+echo 1 > /dev/led/red:standby
+

@@ -60,6 +60,12 @@ disk_partition_mbr ( ) {
     gpart create -s MBR ${DISK_MD}
 }
 
+disk_partition_gpt ( ) {
+    echo "Partitioning the raw disk image with GPT at "`date`
+    echo gpart create -s GPT ${DISK_MD}
+    gpart create -s GPT ${DISK_MD}
+}
+
 # $1: mount directory
 disk_prep_mountdir ( ) {
     if [ -d "$1" ]; then
@@ -188,6 +194,16 @@ disk_created_new ( ) {
     if [ \( "$TYPE" = "UFS" \) -a \( ${RELINDEX} -eq 1 \) ]; then
 	disk_set_var ${ABSINDEX} FREEBSD "y"
     fi
+
+    # The first ZFS partition always gets FreeBSD installed
+    if [ \( "$TYPE" = "ZFS" \) -a \( ${RELINDEX} -eq 1 \) ]; then
+	disk_set_var ${ABSINDEX} FREEBSD "y"
+    fi
+
+    # The first SWAP partition always gets FreeBSD installed
+    if [ \( "$TYPE" = "SWAP" \) -a \( ${RELINDEX} -eq 1 \) ]; then
+	disk_set_var ${ABSINDEX} SWAP "y"
+    fi
 }
 
 
@@ -233,8 +249,6 @@ disk_partition ( ) {
 disk_device ( ) {
     disk_get_var $1 $2 DEVICE
 }
-
-
 
 # $1: index of RESERVED partition
 disk_reserved_device ( ) {
@@ -309,10 +323,15 @@ disk_fat_create ( ) {
     fi
 
     echo "Creating a${SIZE_DISPLAY} FAT partition at "`date`" with start block $FAT_START_BLOCK and label ${FAT_LABEL}"
+# serg
+    echo gpart add -a 63 -b ${FAT_START_BLOCK} -s $1 -t '!12' ${DISK_MD}
 
     NEW_FAT_SLICE=`gpart add -a 63 -b ${FAT_START_BLOCK} -s $1 -t '!12' ${DISK_MD} | sed -e 's/ .*//'`
     NEW_FAT_DEVICE=/dev/${NEW_FAT_SLICE}
     NEW_FAT_SLICE_NUMBER=`echo ${NEW_FAT_SLICE} | sed -e 's/.*[^0-9]//'`
+
+# serg
+    echo gpart set -a active -i ${NEW_FAT_SLICE_NUMBER} ${DISK_MD}
     gpart set -a active -i ${NEW_FAT_SLICE_NUMBER} ${DISK_MD}
 
     # TODO: Select FAT12, FAT16, or FAT32 depending on partition size
@@ -383,24 +402,39 @@ disk_ufs_create ( ) {
     echo "Creating a${SIZE_DISPLAY} UFS partition at "`date`
 
     # 512k alignment helps boot1.efi find UFS.
+
+# serg
+    echo gpart add -t freebsd -a 512k ${SIZE_ARG} ${DISK_MD}
     NEW_UFS_SLICE=`gpart add -t freebsd -a 512k ${SIZE_ARG} ${DISK_MD} | sed -e 's/ .*//'` || exit 1
     NEW_UFS_SLICE_NUMBER=`echo ${NEW_UFS_SLICE} | sed -e 's/.*[^0-9]//'`
 
+# serg
+    echo gpart create -s BSD ${NEW_UFS_SLICE}
     gpart create -s BSD ${NEW_UFS_SLICE}
-    NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${NEW_UFS_SLICE} | sed -e 's/ .*//'` || exit 1
 
+# serg
+    echo gpart add -t freebsd-ufs -a 64k ${NEW_UFS_SLICE} 
+    NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${NEW_UFS_SLICE} | sed -e 's/ .*//'` || exit 1
     NEW_UFS_DEVICE=/dev/${NEW_UFS_PARTITION}
 
+# serg
+    echo newfs ${NEW_UFS_DEVICE}
     newfs ${NEW_UFS_DEVICE}
+
     # Turn on Softupdates
+    echo tunefs -n enable ${NEW_UFS_DEVICE}
     tunefs -n enable ${NEW_UFS_DEVICE}
+
     # Turn on SUJ with a minimally-sized journal.
     # This makes reboots tolerable if you just pull power
     # Note:  A slow SDHC reads about 1MB/s, so a 30MB
     # journal can delay boot by 30s.
-    tunefs -j enable -S 4194304 ${NEW_UFS_DEVICE}
+# serg
+    echo tunefs -j enable -S 4194304 ${NEW_UFS_DEVICE}
+
     # Turn on NFSv4 ACLs
-    tunefs -N enable ${NEW_UFS_DEVICE}
+# serg
+    echo tunefs -N enable ${NEW_UFS_DEVICE}
 
     disk_created_new UFS ${NEW_UFS_PARTITION}
 }
@@ -432,15 +466,62 @@ disk_ufs_mount ( ) {
     disk_record_mountdir $1
 }
 
-
-#
-disk_efi_create ( ) {
-    NEW_EFI_PARTITION=`gpart add -t efi -s 800K ${DISK_MD} | sed -e 's/ .*//'` || exit 1
+# serg
+disk_partition_efi_create ( ) {
+    NEW_EFI_PARTITION=`gpart add -t efi -l efi -a 512k -s 50m -b 16m ${DISK_MD} | sed -e 's/ .*//'` || exit 1
     NEW_EFI_DEVICE=/dev/${NEW_EFI_PARTITION}
-	echo "Writing EFI partition to ${NEW_EFI_DEVICE}"
-    dd if=${FREEBSD_OBJDIR}/stand/efi/boot1/boot1.efifat of=${NEW_EFI_DEVICE}
+
+    echo "Create EFI partition to ${NEW_EFI_DEVICE}"
+    echo gpart add -t efi -l efi -a 512k -s 50m -b 16m ${DISK_MD} 
+
+    newfs_msdos -L efi /dev/${NEW_EFI_PARTITION}
+
+    disk_created_new FAT ${NEW_EFI_PARTITION}
 }
 
+# serg
+disk_partition_swap_create ( ) {
+    local SIZE_ARG
+    local NEW_UFS_PARTITION
+    local NEW_UFS_DEVICE
+
+    if [ -n "$1" ]; then
+	SIZE_ARG="-s $1"
+    else
+	SIZE_ARG="-s 2g"
+    fi
+
+    NEW_EFI_PARTITION=`gpart add -t freebsd-swap ${SIZE_ARG} -a 64k -l swapfs ${DISK_MD} | sed -e 's/ .*//'` || exit 1
+    NEW_EFI_DEVICE=/dev/${NEW_EFI_PARTITION}
+
+    echo "Create FreeBSD-SWAP ${SIZE_ARG} partition on ${NEW_EFI_DEVICE}"
+    disk_created_new SWAP ${NEW_EFI_PARTITION}
+}
+
+# $1: size of partition, uses remainder of disk if not specified
+disk_partition_ufs_create ( ) {
+    local SIZE_ARG
+    local SIZE_DISPLAY="n auto-sized"
+    local NEW_UFS_PARTITION
+    local NEW_UFS_DEVICE
+
+    if [ -n "$1" ]; then
+	SIZE_ARG="-s $1"
+	SIZE_DISPLAY=" $1"
+    fi
+
+    echo "Creating a${SIZE_DISPLAY} FreeBSD-UFS partition at "`date`
+
+    echo gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l freebsd ${DISK_MD} 
+
+    NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l rootfs ${DISK_MD} | sed -e 's/ .*//'` || exit 1
+    NEW_UFS_DEVICE=/dev/${NEW_UFS_PARTITION}
+
+    echo newfs -L FreeBSD ${NEW_UFS_DEVICE}
+
+    newfs -L FreeBSD ${NEW_UFS_DEVICE}
+    disk_created_new UFS ${NEW_UFS_PARTITION}
+}
 
 #
 # $1: mount point
@@ -459,6 +540,9 @@ disk_mount ( ) {
 	    ;;
 	UFS)
 	    disk_ufs_mount ${MOUNTPOINT} ${RELINDEX}
+	    ;;
+	SWAP)
+	    echo disk_swap_mount ${MOUNTPOINT} ${RELINDEX}
 	    ;;
 	*)
 	    echo "Attempt to mount ${TYPE} partition ${RELINDEX} at ${MOUNTPOINT} failed."

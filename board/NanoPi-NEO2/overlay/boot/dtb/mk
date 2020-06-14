@@ -1,0 +1,1 @@
+dtc -I dts -O dtb -o sun50i-h5-nanopi-neo2.dtb sun50i-h5-nanopi-neo2.dts 

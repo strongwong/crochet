@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo 0 > /dev/led/nanopi:red:pwr
+
+echo 1 > /dev/led/nanopi:green:status
+
