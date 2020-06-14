@@ -1,4 +1,4 @@
-U-Boot loader and related files for the Pine64 PineBook Pro
+U-Boot loader and related files for the Pine64 RockPro64.
 
 To install this bootloader on an sdcard just do:
 

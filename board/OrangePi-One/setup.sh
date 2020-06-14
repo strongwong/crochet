@@ -103,7 +103,7 @@ make_boot_install_boot_scr_file ( ) {
 #  not sure if we need to pre-load the dtb file
 #    echo "" \
 #	 >> ${BOARD_BOOT_MOUNTPOINT}/boot.cmd
-    echo "load \${devtype} \${devnum}:${distro_bootpart}"\
+    echo "load \${devtype} \${devnum}:\${distro_bootpart}"\
 	 "${UBLDR_LOADADDR}" ubldr.bin \
 	 >> ${BOARD_BOOT_MOUNTPOINT}/boot.cmd
     echo "go ${UBLDR_LOADADDR}" \

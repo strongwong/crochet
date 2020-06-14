@@ -17,7 +17,7 @@ pinebook-pro_check_uboot ( ) {
 strategy_add $PHASE_CHECK pinebook-pro_check_uboot
 
 #
-# PineBook-Pro uses EFI, so the first partition will be a FAT partition.
+# PineBook-PRO uses EFI, so the first partition will be a FAT partition.
 #
 pinebook-pro_partition_image ( ) {
 	echo "Installing Partitions on ${DISK_MD}"
@@ -34,6 +34,7 @@ strategy_add $PHASE_PARTITION_LWW pinebook-pro_partition_image
 strategy_add $PHASE_BUILD_OTHER  freebsd_loader_efi_build
 strategy_add $PHASE_BOOT_INSTALL mkdir -p EFI/BOOT
 strategy_add $PHASE_BOOT_INSTALL freebsd_loader_efi_copy EFI/BOOT/bootaa64.efi
+strategy_add $PHASE_BOOT_INSTALL cp ${UBOOT_PATH}/splash.bmp .
 
 # NanoPC-T4 puts the kernel on the FreeBSD UFS partition.
 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_default_installkernel .

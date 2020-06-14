@@ -2,7 +2,7 @@ KERNCONF=GENERIC
 PINE64_UBOOT_PORT="u-boot-pine64"
 PINE64_UBOOT_BIN="u-boot-sunxi-with-spl.bin"
 PINE64_UBOOT_PATH="/usr/local/share/u-boot/${PINE64_UBOOT_PORT}"
-IMAGE_SIZE=$((3000 * 1000 * 1000))
+IMAGE_SIZE=$((2000 * 1000 * 1000))
 TARGET_ARCH=aarch64
 TARGET=aarch64
 
@@ -39,5 +39,6 @@ strategy_add $PHASE_BOOT_INSTALL freebsd_loader_efi_copy EFI/BOOT/bootaa64.efi
 
 # Pine64 puts the kernel on the FreeBSD UFS partition.
 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_default_installkernel .
+
 # overlay/etc/fstab mounts the FAT partition at /boot/efi
 strategy_add $PHASE_FREEBSD_BOARD_INSTALL mkdir -p boot/efi
