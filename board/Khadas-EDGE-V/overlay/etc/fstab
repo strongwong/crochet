@@ -1,6 +1,8 @@
 # Device		Mountpoint	FStype	Options			Dump	Pass#
 /dev/gpt/efi		/boot/efi	msdosfs rw,noauto		0	0
-/dev/gpt/rootfs		/               ufs	rw,noatime		1	1
+/dev/gpt/install	/               ufs	rw,noatime		1	1
 /dev/gpt/swapfs		none            swap    sw			0       0
+fdesc			/dev/fd		fdescfs	rw			0	0
+proc			/proc		procfs	rw			0	0
 md			/var/log	mfs	rw,noatime,-s64m	0	0
-md			/var/tmp	mfs	rw,noatime,-s256m	0	0
+md			/tmp		mfs	rw,noatime,-s256m	0	0

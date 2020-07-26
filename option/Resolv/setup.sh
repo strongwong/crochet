@@ -9,7 +9,7 @@ copy_resolv_conf ( ) {
 	cp /etc/resolv.conf ${BOARD_FREEBSD_MOUNTPOINT}/etc/resolv.conf
 }
 # Ensure it happens before PackageInit (Prio 50)
-PRIORITY=40 strategy_add $PHASE_FREEBSD_OPTION_INSTALL copy_resolv_conf
+PRIORITY=20 strategy_add $PHASE_FREEBSD_OPTION_INSTALL copy_resolv_conf
 
 delete_resolv_conf ( ) {
     echo "Deleting resolv.conf"

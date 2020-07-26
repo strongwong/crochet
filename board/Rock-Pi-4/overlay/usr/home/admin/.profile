@@ -2,7 +2,7 @@
 #
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:~/bin
 export PATH
-HOME=/root
+HOME=/usr/home/admin
 export HOME
 TERM=${TERM:-xterm}
 export TERM

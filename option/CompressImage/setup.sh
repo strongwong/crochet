@@ -15,7 +15,8 @@ compress_image() {
             if [ -f $IMG.xz ]; then
                 rm $IMG.xz
             fi
-            xz -k $IMG
+#           xz -k $IMG
+	    xz -T8 --block-size 90M -k -F xz $IMG
             ;;
     esac
 }

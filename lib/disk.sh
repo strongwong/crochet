@@ -385,6 +385,18 @@ disk_ufs_partition ( ) {
     disk_partition UFS ${INDEX:-1}
 }
 
+# $1: index of UFS partition
+disk_zfs_device ( ) {
+    local INDEX=$1
+    disk_device ZFS ${INDEX:-1}
+}
+
+# $1: index of UFS partition
+disk_zfs_partition ( ) {
+    local INDEX=$1
+    disk_partition ZFS ${INDEX:-1}
+}
+
 # $1: size of partition, uses remainder of disk if not specified
 disk_ufs_create ( ) {
     local SIZE_ARG
@@ -466,6 +478,18 @@ disk_ufs_mount ( ) {
     disk_record_mountdir $1
 }
 
+# $1: directory where UFS partition will be mounted
+# $2: relative index of partition to be mounted, 1 if not specified
+disk_zfs_mount ( ) {
+    echo "Mounting ZFS partition ${2:-1} at $1"
+    disk_prep_mountdir $1
+    echo mount `disk_zfs_device $2` $1 
+# serg
+    # mount `disk_zfs_device $2` $1 || exit 1
+# serg
+    disk_record_mountdir $1
+}
+
 # serg
 disk_partition_efi_create ( ) {
     NEW_EFI_PARTITION=`gpart add -t efi -l efi -a 512k -s 50m -b 16m ${DISK_MD} | sed -e 's/ .*//'` || exit 1
@@ -514,13 +538,28 @@ disk_partition_ufs_create ( ) {
 
     echo gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l freebsd ${DISK_MD} 
 
-    NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l rootfs ${DISK_MD} | sed -e 's/ .*//'` || exit 1
+    NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l install ${DISK_MD} | sed -e 's/ .*//'` || exit 1
     NEW_UFS_DEVICE=/dev/${NEW_UFS_PARTITION}
 
     echo newfs -L FreeBSD ${NEW_UFS_DEVICE}
 
     newfs -L FreeBSD ${NEW_UFS_DEVICE}
     disk_created_new UFS ${NEW_UFS_PARTITION}
+}
+
+# serg
+disk_partition_zfs_create ( ) {
+    ZPOOL_NAME="freenas-boot"
+    NEW_ZFS_PARTITION=`gpart add -t freebsd-zfs ${DISK_MD} | sed -e 's/ .*//'` || exit 1
+
+    echo "Create ZFS partition ${NEW_ZFS_PARTITION} on ${NEW_EFI_DEVICE}"
+# serg
+#    zpool create -f -R /mnt -O mountpoint=none -O atime=off ${ZPOOL_NAME} ${NEW_ZFS_PARTITION}
+# serg
+#    zfs set compress=lz4 ${ZPOOL_NAME}
+#    zfs create -o canmount=off      -o mountpoint=none              ${ZPOOL_NAME}/ROOT
+#    zfs create                      -o mountpoint=/                 ${ZPOOL_NAME}/ROOT/default
+#    zpool set bootfs=${ZPOOL_NAME}/ROOT/default zroot
 }
 
 #
@@ -540,6 +579,9 @@ disk_mount ( ) {
 	    ;;
 	UFS)
 	    disk_ufs_mount ${MOUNTPOINT} ${RELINDEX}
+	    ;;
+	ZFS)
+	    disk_zfs_mount ${MOUNTPOINT} ${RELINDEX}
 	    ;;
 	SWAP)
 	    echo disk_swap_mount ${MOUNTPOINT} ${RELINDEX}

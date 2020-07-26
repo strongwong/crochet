@@ -1,6 +1,4 @@
-#
-KERNCONF=EXPERT
-KERNCONF=FREENAS
+# Crochet setup for PineBook-Pro
 
 TARGET=arm64
 TARGET_ARCH=aarch64
@@ -8,8 +6,6 @@ TARGET_ARCH=aarch64
 UBOOT_DIR="u-boot-pinebook-pro"
 UBOOT_PATH="/usr/local/share/u-boot/${UBOOT_DIR}"
 UBOOT_BIN="u-boot.itb"
-
-IMAGE_SIZE=$((1000 * 1000 * 1000))
 
 pinebook-pro_check_uboot ( ) {
 	uboot_port_test ${UBOOT_DIR} ${UBOOT_BIN}
@@ -36,9 +32,6 @@ strategy_add $PHASE_BOOT_INSTALL mkdir -p EFI/BOOT
 strategy_add $PHASE_BOOT_INSTALL freebsd_loader_efi_copy EFI/BOOT/bootaa64.efi
 strategy_add $PHASE_BOOT_INSTALL cp ${UBOOT_PATH}/splash.bmp .
 
-# NanoPC-T4 puts the kernel on the FreeBSD UFS partition.
+# Puts the kernel on the FreeBSD UFS partition.
 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_default_installkernel .
-
-# overlay/etc/fstab mounts the FAT partition at /boot/msdos
-strategy_add $PHASE_FREEBSD_BOARD_INSTALL mkdir -p boot/msdos
 

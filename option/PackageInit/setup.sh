@@ -38,13 +38,20 @@ tmp: {
   enabled: yes
 }
 EOF
+	mount -t devfs devfs ${BOARD_FREEBSD_MOUNTPOINT}/dev
+
 		export _PACKAGE_REPO=tmp
+		export IGNORE_OSVERSION=yes
 	else
 		export _PACKAGE_REPO=FreeBSD
+		export IGNORE_OSVERSION=yes
 	fi
     pkg -c ${BOARD_FREEBSD_MOUNTPOINT} update -r ${_PACKAGE_REPO}
     pkg -c ${BOARD_FREEBSD_MOUNTPOINT} install -y -r ${_PACKAGE_REPO} pkg
-    pkg -c ${BOARD_FREEBSD_MOUNTPOINT} upgrade -r ${_PACKAGE_REPO}
+#
+#   pkg -c ${BOARD_FREEBSD_MOUNTPOINT} upgrade -r ${_PACKAGE_REPO}
+#
+#	umount -f ${BOARD_FREEBSD_MOUNTPOINT}/dev
 }
 
 package_init_cleanup ( ) {

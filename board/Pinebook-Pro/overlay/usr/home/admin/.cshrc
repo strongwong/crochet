@@ -24,6 +24,9 @@ setenv	EDITOR		vi
 setenv	PAGER		more
 setenv	BLOCKSIZE	K
 
+setenv  MM_CHARSET      UTF-8
+setenv  LANG            en_US.UTF-8
+
 if ($?prompt) then
 	# An interactive shell -- set some stuff up
 	set prompt = "%N@%m:%~ %# "
