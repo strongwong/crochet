@@ -1,11 +1,15 @@
 #
 TARGET=arm64
 TARGET_ARCH=aarch64
-KERNCONF=EXPERT
+KERNCONF=GENERIC
+FREEBSD_SRC=/home/virusv/freebsd
 SUNXI_UBOOT_DIR="u-boot-nanopi-k1-plus"
 SUNXI_UBOOT_BIN="u-boot-sunxi-with-spl.bin "
 UBOOT_PATH="/usr/local/share/u-boot/${SUNXI_UBOOT_DIR}"
-IMAGE_SIZE=$((1000 * 1000 * 1000))
+IMAGE_SIZE=$((5 * 1024 * 1024 * 1024))
+
+FREEBSD_EXTRA_ARGS="-DNO_CLEAN"
+FREEBSD_KERNEL_EXTRA_ARGS="-DKERNFAST"
 
 nanopi_k1_plus_check_uboot ( ) {
     uboot_port_test ${SUNXI_UBOOT_DIR} ${SUNXI_UBOOT_BIN}
@@ -63,7 +67,7 @@ fix_dtb_path () {
     fi
 }
 
-PRIORITY=50  strategy_add $PHASE_FREEBSD_OPTION_INSTALL add_qemu
-PRIORITY=150 strategy_add $PHASE_FREEBSD_OPTION_INSTALL del_qemu
+#PRIORITY=50  strategy_add $PHASE_FREEBSD_OPTION_INSTALL add_qemu
+#PRIORITY=150 strategy_add $PHASE_FREEBSD_OPTION_INSTALL del_qemu
 PRIORITY=200 strategy_add $PHASE_FREEBSD_OPTION_INSTALL fix_dtb_path
 
