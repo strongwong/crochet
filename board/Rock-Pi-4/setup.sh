@@ -32,7 +32,7 @@ strategy_add $PHASE_PARTITION_LWW rock-pi-4_partition_image
 strategy_add $PHASE_BUILD_OTHER  freebsd_loader_efi_build
 strategy_add $PHASE_BOOT_INSTALL mkdir -p EFI/BOOT
 strategy_add $PHASE_BOOT_INSTALL freebsd_loader_efi_copy EFI/BOOT/bootaa64.efi
-strategy_add $PHASE_BOOT_INSTALL cp ${UBOOT_PATH}/splash.bmp .
+#strategy_add $PHASE_BOOT_INSTALL cp ${UBOOT_PATH}/splash.bmp .
 
 # Puts the kernel on the FreeBSD UFS partition.
 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_default_installkernel .
