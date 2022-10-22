@@ -16,11 +16,11 @@ _DISK_MOUNTED_DIRS=""  # List of things to be unmounted when we're done
 disk_unmount_all ( ) {
     cd ${TOPDIR}
     for d in ${_DISK_MOUNTED_DIRS}; do
-	disk_unmount_dir $d
+        disk_unmount_dir $d
     done
     _DISK_MOUNTED_DIRS=""
     for d in ${_DISK_MDS}; do
-	disk_release_md $d
+        disk_release_md $d
     done
     _DISK_MDS=""
 }
@@ -45,7 +45,7 @@ disk_create_image ( ) {
     echo "    $1"
     [ -f $1 ] && rm -f $1
     dd if=/dev/zero of=$1 bs=512 seek=$(($2 / 512)) count=0 >/dev/null 2>&1
-    DISK_MD=`mdconfig -a -t vnode -f $1 -x 63 -y 255`
+    DISK_MD=`mdconfig -a -t vnode -f $1 -x 63 -y 255 -o async -o cache`
     disk_record_md ${DISK_MD}
 }
 
@@ -92,10 +92,10 @@ disk_count ( ) {
     local TYPE_COUNT
 
     if [ -z "$TYPE" ]; then
-	echo ${DISK_COUNT:-0}
+        echo ${DISK_COUNT:-0}
     else
-	TYPE_COUNT=`eval echo \\$DISK_${TYPE}_COUNT`
-	echo ${TYPE_COUNT:-0}
+        TYPE_COUNT=`eval echo \\$DISK_${TYPE}_COUNT`
+        echo ${TYPE_COUNT:-0}
     fi
 }
 
@@ -112,15 +112,15 @@ disk_get_var ( ) {
     local VARNAME
 
     if [ $# -eq 3 ]; then
-	TYPE=$1
-	shift
+        TYPE=$1
+        shift
     else
-	TYPE=
+        TYPE=
     fi
     ABSINDEX=$1
 
     if [ -n "$TYPE" ]; then
-	ABSINDEX=`disk_absindex ${TYPE} ${1}`
+        ABSINDEX=`disk_absindex ${TYPE} ${1}`
     fi
     VARNAME=$2
 
@@ -142,15 +142,15 @@ disk_set_var ( ) {
     local VALUE
 
     if [ $# -eq 4 ]; then
-	TYPE=$1
-	shift
+        TYPE=$1
+        shift
     else
-	TYPE=
+        TYPE=
     fi
     ABSINDEX=$1
 
     if [ -n "$TYPE" ]; then
-	ABSINDEX=`disk_absindex ${TYPE} ${1}`
+        ABSINDEX=`disk_absindex ${TYPE} ${1}`
     fi
     VARNAME=$2
     VALUE=$3
@@ -187,22 +187,22 @@ disk_created_new ( ) {
 
     # The first FAT partition is always considered a boot partition
     if [ \( "$TYPE" = "FAT" \) -a \( ${RELINDEX} -eq 1 \) ]; then
-	disk_set_var ${ABSINDEX} BOOT "y"
+        disk_set_var ${ABSINDEX} BOOT "y"
     fi
 
     # The first UFS partition always gets FreeBSD installed
     if [ \( "$TYPE" = "UFS" \) -a \( ${RELINDEX} -eq 1 \) ]; then
-	disk_set_var ${ABSINDEX} FREEBSD "y"
+        disk_set_var ${ABSINDEX} FREEBSD "y"
     fi
 
     # The first ZFS partition always gets FreeBSD installed
     if [ \( "$TYPE" = "ZFS" \) -a \( ${RELINDEX} -eq 1 \) ]; then
-	disk_set_var ${ABSINDEX} FREEBSD "y"
+        disk_set_var ${ABSINDEX} FREEBSD "y"
     fi
 
     # The first SWAP partition always gets FreeBSD installed
     if [ \( "$TYPE" = "SWAP" \) -a \( ${RELINDEX} -eq 1 \) ]; then
-	disk_set_var ${ABSINDEX} SWAP "y"
+        disk_set_var ${ABSINDEX} SWAP "y"
     fi
 }
 
@@ -272,7 +272,7 @@ disk_reserved_partition ( ) {
 disk_reserved_create( ) {
     echo "Creating reserve partition at "`date`" of size $1"
 
-   _DISK_RESERVED_SLICE=`gpart add -a 63 -s $1 -t '!12' ${DISK_MD} | sed -e 's/ .*//'`
+    _DISK_RESERVED_SLICE=`gpart add -a 63 -s $1 -t '!12' ${DISK_MD} | sed -e 's/ .*//'`
     DISK_RESERVED_DEVICE=/dev/${_DISK_RESERVED_SLICE}
 
     disk_created_new RESERVED ${_DISK_RESERVED_SLICE}
@@ -308,12 +308,12 @@ disk_fat_create ( ) {
     local NEW_FAT_SLICE_NUMBER
 
     if [ -n "$1" -a \( "$1" != "-1" \) ]; then
-	SIZE_ARG="-s $1"
-	SIZE_DISPLAY=" $1"
+        SIZE_ARG="-s $1"
+        SIZE_DISPLAY=" $1"
     fi
 
     if [ -z "${FAT_LABEL}" ]; then
-	FAT_LABEL="BOOT"
+        FAT_LABEL="BOOT"
     fi
 
     # start block
@@ -407,8 +407,8 @@ disk_ufs_create ( ) {
     local NEW_UFS_DEVICE
 
     if [ -n "$1" ]; then
-	SIZE_ARG="-s $1"
-	SIZE_DISPLAY=" $1"
+      SIZE_ARG="-s $1"
+      SIZE_DISPLAY=" $1"
     fi
 
     echo "Creating a${SIZE_DISPLAY} UFS partition at "`date`
@@ -425,7 +425,7 @@ disk_ufs_create ( ) {
     gpart create -s BSD ${NEW_UFS_SLICE}
 
 # serg
-    echo gpart add -t freebsd-ufs -a 64k ${NEW_UFS_SLICE} 
+    echo gpart add -t freebsd-ufs -a 64k ${NEW_UFS_SLICE}
     NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${NEW_UFS_SLICE} | sed -e 's/ .*//'` || exit 1
     NEW_UFS_DEVICE=/dev/${NEW_UFS_PARTITION}
 
@@ -459,13 +459,13 @@ disk_ufs_label ( ) {
     local UFS_DEVICE
 
     if [ -z "$UFS_INDEX" ]; then
-	UFS_INDEX=1
+        UFS_INDEX=1
     fi
 
     if [ -n "$UFS_LABEL" ]; then
-	UFS_DEVICE=`disk_ufs_device ${UFS_INDEX}`
-	echo "Labeling ${UFS_DEVICE} ${UFS_LABEL}"
-	tunefs -L ${UFS_LABEL} ${UFS_DEVICE}
+        UFS_DEVICE=`disk_ufs_device ${UFS_INDEX}`
+        echo "Labeling ${UFS_DEVICE} ${UFS_LABEL}"
+        tunefs -L ${UFS_LABEL} ${UFS_DEVICE}
     fi
 }
 
@@ -483,7 +483,7 @@ disk_ufs_mount ( ) {
 disk_zfs_mount ( ) {
     echo "Mounting ZFS partition ${2:-1} at $1"
     disk_prep_mountdir $1
-    echo mount `disk_zfs_device $2` $1 
+    echo mount `disk_zfs_device $2` $1
 # serg
     # mount `disk_zfs_device $2` $1 || exit 1
 # serg
@@ -496,7 +496,7 @@ disk_partition_efi_create ( ) {
     NEW_EFI_DEVICE=/dev/${NEW_EFI_PARTITION}
 
     echo "Create EFI partition to ${NEW_EFI_DEVICE}"
-    echo gpart add -t efi -l efi -a 512k -s 50m -b 16m ${DISK_MD} 
+    echo gpart add -t efi -l efi -a 512k -s 50m -b 16m ${DISK_MD}
 
     newfs_msdos -L efi /dev/${NEW_EFI_PARTITION}
 
@@ -510,9 +510,9 @@ disk_partition_swap_create ( ) {
     local NEW_UFS_DEVICE
 
     if [ -n "$1" ]; then
-	SIZE_ARG="-s $1"
+        SIZE_ARG="-s $1"
     else
-	SIZE_ARG="-s 2g"
+        SIZE_ARG="-s 2g"
     fi
 
     NEW_EFI_PARTITION=`gpart add -t freebsd-swap ${SIZE_ARG} -a 64k -l swapfs ${DISK_MD} | sed -e 's/ .*//'` || exit 1
@@ -530,13 +530,13 @@ disk_partition_ufs_create ( ) {
     local NEW_UFS_DEVICE
 
     if [ -n "$1" ]; then
-	SIZE_ARG="-s $1"
-	SIZE_DISPLAY=" $1"
+        SIZE_ARG="-s $1"
+        SIZE_DISPLAY=" $1"
     fi
 
     echo "Creating a${SIZE_DISPLAY} FreeBSD-UFS partition at "`date`
 
-    echo gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l freebsd ${DISK_MD} 
+    echo gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l freebsd ${DISK_MD}
 
     NEW_UFS_PARTITION=`gpart add -t freebsd-ufs -a 64k ${SIZE_ARG} -l install ${DISK_MD} | sed -e 's/ .*//'` || exit 1
     NEW_UFS_DEVICE=/dev/${NEW_UFS_PARTITION}
@@ -574,22 +574,22 @@ disk_mount ( ) {
     TYPE=`disk_get_var ${ABSINDEX} TYPE`
     RELINDEX=`disk_get_var ${ABSINDEX} RELINDEX`
     case ${TYPE} in
-	FAT)
-	    disk_fat_mount ${MOUNTPOINT} ${RELINDEX}
-	    ;;
-	UFS)
-	    disk_ufs_mount ${MOUNTPOINT} ${RELINDEX}
-	    ;;
-	ZFS)
-	    disk_zfs_mount ${MOUNTPOINT} ${RELINDEX}
-	    ;;
-	SWAP)
-	    echo disk_swap_mount ${MOUNTPOINT} ${RELINDEX}
-	    ;;
-	*)
-	    echo "Attempt to mount ${TYPE} partition ${RELINDEX} at ${MOUNTPOINT} failed."
-	    echo "Do not know how to mount partitions of type ${TYPE}."
-	    exit 1
-	    ;;
+        FAT)
+            disk_fat_mount ${MOUNTPOINT} ${RELINDEX}
+            ;;
+        UFS)
+            disk_ufs_mount ${MOUNTPOINT} ${RELINDEX}
+            ;;
+        ZFS)
+            disk_zfs_mount ${MOUNTPOINT} ${RELINDEX}
+            ;;
+        SWAP)
+            echo disk_swap_mount ${MOUNTPOINT} ${RELINDEX}
+            ;;
+        *)
+            echo "Attempt to mount ${TYPE} partition ${RELINDEX} at ${MOUNTPOINT} failed."
+            echo "Do not know how to mount partitions of type ${TYPE}."
+            exit 1
+            ;;
     esac
 }

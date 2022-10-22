@@ -201,17 +201,15 @@ _freebsd_build ( ) {
 # $@: additional make arguments
 #
 freebsd_buildworld ( ) {
-if [ -z ${WORLDJOBS} ]; then
-	WORLDJOBS="-j $(sysctl -n hw.ncpu)"
-else
-	WORLDJOBS="-j${WORLDJOBS}"
-fi
+    if [ -z ${WORLDJOBS} ]; then
+        WORLDJOBS="$(sysctl -n hw.ncpu)"
+    fi
     _FREEBSD_WORLD_ARGS="TARGET_ARCH=${TARGET_ARCH} SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} ${FREEBSD_EXTRA_ARGS} ${FREEBSD_WORLD_EXTRA_ARGS} ${FREEBSD_WORLD_BOARD_ARGS}"
     if [ -n "${TARGET_CPUTYPE}" ]; then
         _FREEBSD_WORLD_ARGS="TARGET_CPUTYPE=${TARGET_CPUTYPE} ${_FREEBSD_WORLD_ARGS}"
     fi
     CONF=${TARGET_ARCH}
-    echo make ${_FREEBSD_WORLD_ARGS} ${FREEBSD_BUILDWORLD_EXTRA_ARGS} ${FREEBSD_BUILDWORLD_BOARD_ARGS} "$@" ${WORLDJOBS} buildworld > ${WORKDIR}/_.buildworld.${CONF}.sh
+    echo make ${_FREEBSD_WORLD_ARGS} ${FREEBSD_BUILDWORLD_EXTRA_ARGS} ${FREEBSD_BUILDWORLD_BOARD_ARGS} "$@" -j ${WORLDJOBS} buildworld > ${WORKDIR}/_.buildworld.${CONF}.sh
     if [ -n "${FREEBSD_FORCE_BUILDWORLD}" ]; then
         rm -f ${WORKDIR}/_.built-world.${CONF}
     fi
@@ -224,17 +222,15 @@ fi
 # $@: arguments to make.
 #
 freebsd_buildkernel ( ) {
-if [ -z ${KERNJOBS} ]; then
-	KERNJOBS="-j $(sysctl -n hw.ncpu)"
-else
-	KERNJOBS="-j${KERNJOBS}"
-fi
+    if [ -z ${KERNJOBS} ]; then
+        KERNJOBS="$(sysctl -n hw.ncpu)"
+    fi
     _FREEBSD_KERNEL_ARGS="TARGET_ARCH=${TARGET_ARCH} SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} KERNCONF=${KERNCONF} ${FREEBSD_EXTRA_ARGS} ${FREEBSD_KERNEL_EXTRA_ARGS} ${FREEBSD_KERNEL_BOARD_ARGS}"
     if [ -n "${TARGET_CPUTYPE}" ]; then
         _FREEBSD_KERNEL_ARGS="TARGET_CPUTYPE=${TARGET_CPUTYPE} ${_FREEBSD_KERNEL_ARGS}"
     fi
     CONF=${TARGET_ARCH}-${KERNCONF}
-    echo make  ${_FREEBSD_KERNEL_ARGS} ${FREEBSD_BUILDKERNEL_EXTRA_ARGS} ${FREEBSD_KERNEL_BOARD_ARGS} "$@" $KERNJOBS buildkernel > ${WORKDIR}/_.buildkernel.${CONF}.sh
+    echo make  ${_FREEBSD_KERNEL_ARGS} ${FREEBSD_BUILDKERNEL_EXTRA_ARGS} ${FREEBSD_KERNEL_BOARD_ARGS} "$@" -j $KERNJOBS buildkernel > ${WORKDIR}/_.buildkernel.${CONF}.sh
     if [ -n "${FREEBSD_FORCE_BUILDKERNEL}" ]; then
         rm -f ${WORKDIR}/_.built-kernel.${CONF}
     fi
@@ -247,11 +243,14 @@ fi
 # $1: Root directory of UFS partition
 #
 freebsd_installworld ( ) {
+    if [ -z ${WORLDJOBS} ]; then
+        WORLDJOBS="$(sysctl -n hw.ncpu)"
+    fi
     cd $FREEBSD_SRC
     CONF=${TARGET_ARCH}
     echo "Installing FreeBSD world at "`date`
     echo "    Destination: $1"
-    if make SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} ${_FREEBSD_WORLD_ARGS} ${FREEBSD_INSTALLWORLD_EXTRA_ARGS} ${FREEBSD_INSTALLWORLD_BOARD_ARGS} DESTDIR=$1 installworld > ${WORKDIR}/_.installworld.${CONF}.log 2>&1
+    if make SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} ${_FREEBSD_WORLD_ARGS} ${FREEBSD_INSTALLWORLD_EXTRA_ARGS} ${FREEBSD_INSTALLWORLD_BOARD_ARGS} DESTDIR=$1 -j $WORLDJOBS installworld > ${WORKDIR}/_.installworld.${CONF}.log 2>&1
     then
         true # success
     else
@@ -260,7 +259,7 @@ freebsd_installworld ( ) {
         exit 1
     fi
 
-    if make SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} TARGET_ARCH=$TARGET_ARCH DESTDIR=$1 distrib-dirs > ${WORKDIR}/_.distrib-dirs.${CONF}.log 2>&1
+    if make SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} TARGET_ARCH=$TARGET_ARCH DESTDIR=$1 -j $WORLDJOBS distrib-dirs > ${WORKDIR}/_.distrib-dirs.${CONF}.log 2>&1
     then
         true # success
     else
@@ -269,7 +268,7 @@ freebsd_installworld ( ) {
         exit 1
     fi
 
-    if make SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} TARGET_ARCH=$TARGET_ARCH DESTDIR=$1 distribution > ${WORKDIR}/_.distribution.${CONF}.log 2>&1
+    if make SRCCONF=${SRCCONF} __MAKE_CONF=${__MAKE_CONF} TARGET_ARCH=$TARGET_ARCH DESTDIR=$1 -j $WORLDJOBS distribution > ${WORKDIR}/_.distribution.${CONF}.log 2>&1
     then
         true # success
     else
@@ -294,12 +293,17 @@ freebsd_installkernel ( ) {
     if [ -n "$1" ]; then
         cd $1
     fi
+
+    if [ -z ${KERNJOBS} ]; then
+        KERNJOBS="$(sysctl -n hw.ncpu)"
+    fi
+
     DESTDIR=`pwd`
     CONF=${TARGET_ARCH}-${KERNCONF}
     cd $FREEBSD_SRC
     echo "Installing FreeBSD kernel at "`date`
     echo "    Destination: $DESTDIR"
-    echo make ${_FREEBSD_KERNEL_ARGS} ${FREEBSD_INSTALLKERNEL_EXTRA_ARGS} ${FREEBSD_INSTALLKERNEL_BOARD_ARGS} DESTDIR=$DESTDIR installkernel > ${WORKDIR}/_.installkernel.${CONF}.sh
+    echo make ${_FREEBSD_KERNEL_ARGS} ${FREEBSD_INSTALLKERNEL_EXTRA_ARGS} ${FREEBSD_INSTALLKERNEL_BOARD_ARGS} DESTDIR=$DESTDIR -j $KERNJOBS installkernel > ${WORKDIR}/_.installkernel.${CONF}.sh
     if /bin/sh -e ${WORKDIR}/_.installkernel.${CONF}.sh > ${WORKDIR}/_.installkernel.${CONF}.log 2>&1
     then
         true # success
@@ -345,20 +349,20 @@ freebsd_ubldr_build ( ) {
     mkdir -p ${UBLDR_DIR}/boot/defaults
 
     if [ -d stand ] ; then
-	cd stand
-	eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
-	eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
-	eval $buildenv make "$@" -m $ubldr_makefiles depend >> ${LOGFILE} 2>&1
-    else
-	cd sys/boot
-	eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
-	eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
-	eval $buildenv make "$@" -m $ubldr_makefiles all >> ${LOGFILE} 2>&1
+        cd stand
+        eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
+        eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
+        eval $buildenv make "$@" -m $ubldr_makefiles depend >> ${LOGFILE} 2>&1
+          else
+        cd sys/boot
+        eval $buildenv make "$@" -m $ubldr_makefiles obj > ${LOGFILE} 2>&1
+        eval $buildenv make "$@" -m $ubldr_makefiles clean >> ${LOGFILE} 2>&1
+        eval $buildenv make "$@" -m $ubldr_makefiles all >> ${LOGFILE} 2>&1
     fi
 
     if /bin/sh -e ${UBLDR_DIR}/_.ubldr.${CONF}.sh >> ${LOGFILE} 2>&1
     then
-        cd arm/uboot
+        cd uboot
         eval $buildenv make "$@" DESTDIR=${UBLDR_DIR}/ BINDIR=boot MK_MAN=no -m $ubldr_makefiles install >> ${LOGFILE} || exit 1
         mv ${UBLDR_DIR}/_.ubldr.${CONF}.sh ${UBLDR_DIR}/_.ubldr.${CONF}.built
     else
@@ -383,9 +387,9 @@ freebsd_ubldr_copy ( ) {
 
 freebsd_ubldr_copy_ubldr ( ) {
     if [ $1 = "." ]; then
-	echo "Installing ubldr in ${PWD}"
+        echo "Installing ubldr in ${PWD}"
     else
-	echo "Installing ubldr in $1"
+        echo "Installing ubldr in $1"
     fi
     CONF=${TARGET_ARCH}-${KERNCONF}
     cp ${WORKDIR}/ubldr-${CONF}/boot/ubldr* $1 || exit 1
@@ -447,9 +451,9 @@ freebsd_loader_efi_build ( ) {
 }
 
 freebsd_loader_efi_copy ( ) {
-    target=${PWD}
+    TARGET=${PWD}
     LOGFILE=${WORKDIR}/_.loader.efi.install.${CONF}.log
-    [ "$1" != "." ] && target="$1"
+    [ "$1" != "." ] && TARGET="$1"
 #
 #   echo "Installing boot1.efi in ${TARGET}"
 #   cp ${WORKDIR}/efi-${CONF}/boot/boot1.efi $1 || exit 1
@@ -515,26 +519,29 @@ freebsd_install_fdt ( ) (
     _DTBINTERMEDIATEDIR=`mktemp -d ${WORKDIR}/fdt/fdt.XXXXXX`
     case $1 in
         *.dts)
-	    _DTSIN=${_FDTDIR}/$1
-	    case ${FREEBSD_VERSION} in
-		10.0|10.1) _DTBINTERMEDIATE=${_DTBINTERMEDIATEDIR}/out.dtb
-		    ;;
-		1*.*) _DTBINTERMEDIATE=${_DTBINTERMEDIATEDIR}
-		    ;;
-		*)
-		    echo "ERROR: Crochet can only build images for FreeBSD 10.0 or later"
-		    exit 1
-		    ;;
-	    esac
-	    echo ${FREEBSD_SRC}/sys/tools/fdt/make_dtb.sh ${FREEBSD_SRC}/sys ${_DTSIN} ${_DTBINTERMEDIATE} | (cd ${FREEBSD_SRC}; make TARGET_ARCH=$TARGET_ARCH buildenv > /dev/null)
+            _DTSIN=${_FDTDIR}/$1
+            case ${FREEBSD_VERSION} in
+              10.0|10.1)
+                  _DTBINTERMEDIATE=${_DTBINTERMEDIATEDIR}/out.dtb
+                  ;;
+              1*.*)
+                  _DTBINTERMEDIATE=${_DTBINTERMEDIATEDIR}
+                  ;;
+              *)
+                  echo "ERROR: Crochet can only build images for FreeBSD 10.0 or later"
+                  exit 1
+                  ;;
+            esac
+            echo ${FREEBSD_SRC}/sys/tools/fdt/make_dtb.sh ${FREEBSD_SRC}/sys ${_DTSIN} ${_DTBINTERMEDIATE} | (cd ${FREEBSD_SRC}; make TARGET_ARCH=$TARGET_ARCH buildenv > /dev/null)
+
             case $2 in
                 *.dts)
-		    _DTSOUT=$2
-		    dtc -I dtb -O dts ${_DTBINTERMEDIATEDIR}/*.dtb > ${_DTSOUT}
+                    _DTSOUT=$2
+                    dtc -I dtb -O dts ${_DTBINTERMEDIATEDIR}/*.dtb > ${_DTSOUT}
                     ;;
                 *.dtb)
-		    _DTBOUT=$2
-		    cp ${_DTBINTERMEDIATEDIR}/*.dtb ${_DTBOUT}
+                    _DTBOUT=$2
+                    cp ${_DTBINTERMEDIATEDIR}/*.dtb ${_DTBOUT}
                     ;;
                 *)
                     echo "Can't compile $1 to $2"
@@ -542,10 +549,10 @@ freebsd_install_fdt ( ) (
                     ;;
             esac
             ;;
-	*)
-	    echo "Cannot compile $1 to $2"
-	    exit 1
-	    ;;
+        *)
+            echo "Cannot compile $1 to $2"
+            exit 1
+            ;;
     esac
 )
 

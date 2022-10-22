@@ -174,8 +174,8 @@ run_phase ( ) {
     # Sort by priority, then by insertion order.
     sort < ${_PHASE_FILE} > ${_PHASE_FILE}.sorted
     if [ $VERBOSE -gt 0 ]; then
-	# TODO: Print a description, not just the number.
-	echo "====================> Phase $P `print_phase_description $P` <===================="
+        # TODO: Print a description, not just the number.
+        echo "====================> Phase $P `print_phase_description $P` <===================="
     fi
     . ${_PHASE_FILE}.sorted
 }
@@ -190,7 +190,7 @@ run_strategy ( ) {
         for P in `cat ${STRATEGYDIR}/phases.txt | sort -n | uniq`; do
             if [ $P -gt $_CURRENT_PHASE ]; then
                 _CURRENT_PHASE=$P
-		run_phase ${P}
+                run_phase ${P}
                 break
             fi
         done
@@ -206,21 +206,21 @@ run_strategy ( ) {
 __run ( ) {
     # Set the cwd appropriately depending on the phase we're running.
     if [ $_CURRENT_PHASE -ge $PHASE_FREEBSD_START ] && [ $_CURRENT_PHASE -le $PHASE_FREEBSD_DONE ]; then
-	# The first UFS partition always gets the initial FreeBSD install
-	BOARD_FREEBSD_MOUNTPOINT=`board_ufs_mountpoint 1`
-	BOARD_CURRENT_MOUNTPOINT=$BOARD_FREEBSD_MOUNTPOINT
+        # The first UFS partition always gets the initial FreeBSD install
+        BOARD_FREEBSD_MOUNTPOINT=`board_ufs_mountpoint 1`
+        BOARD_CURRENT_MOUNTPOINT=$BOARD_FREEBSD_MOUNTPOINT
         cd ${BOARD_CURRENT_MOUNTPOINT}
     elif [ $_CURRENT_PHASE -ge $PHASE_BOOT_START ] && [ $_CURRENT_PHASE -le $PHASE_BOOT_DONE ]; then
-	# The first FAT partition is always considered the boot partition
-	BOARD_BOOT_MOUNTPOINT=`board_fat_mountpoint 1`
-	BOARD_CURRENT_MOUNTPOINT=$BOARD_BOOT_MOUNTPOINT
+        # The first FAT partition is always considered the boot partition
+        BOARD_BOOT_MOUNTPOINT=`board_fat_mountpoint 1`
+        BOARD_CURRENT_MOUNTPOINT=$BOARD_BOOT_MOUNTPOINT
         cd ${BOARD_CURRENT_MOUNTPOINT}
     else
         cd ${TOPDIR}
     fi
     shift
     if [ $VERBOSE -gt 0 ]; then
-	echo "Running: " $@
+        echo "Running: " $@
     fi
     eval $@
 }

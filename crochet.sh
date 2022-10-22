@@ -66,10 +66,10 @@ while true; do
             UPDATE_SOURCETREE=yes
             shift
             ;;
-	-v)
-	    VERBOSE=$(($VERBOSE + 1))
-	    shift
-	    ;;
+        -v)
+            VERBOSE=$(($VERBOSE + 1))
+            shift
+            ;;
         --)
             shift; break
             ;;
