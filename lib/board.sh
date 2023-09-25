@@ -52,21 +52,21 @@ board_setup ( ) {
 
 board_generate_image_name ( ) {
     if [ -z "${IMGDIR}" ]; then
-	_IMGDIR=${WORKDIR}
+        _IMGDIR=${WORKDIR}
     else
-	_IMGDIR=${IMGDIR}
+        _IMGDIR=${IMGDIR}
     fi
     if [ ! -z "${IMGNAME}" ]; then
-	eval IMG=${_IMGDIR}/${IMGNAME}
+        eval IMG=${_IMGDIR}/${IMGNAME}
     fi
 
     if [ -z "${IMG}" ]; then
-	DATE=`date +%Y%m%d` 
+        DATE=`date +%Y%m%d`
         if [ -z "${SOURCE_VERSION}" ]; then
            IMG=${_IMGDIR}/FreeBSD-${TARGET_ARCH}-${FREEBSD_VERSION}-${KERNCONF}-${BOARDNAME}-${DATE}.img
-	else
+        else
            IMG=${_IMGDIR}/FreeBSD-${TARGET_ARCH}-${FREEBSD_VERSION}-${KERNCONF}-${BOARDNAME}-${SOURCE_VERSION}-${DATE}.img
-	fi
+        fi
     fi
     echo "Image name is:"
     echo "    ${IMG}"
@@ -97,10 +97,6 @@ board_defined ( ) {
     fi
 }
 strategy_add $PHASE_POST_CONFIG board_defined
-
-# TODO: Not every board requires -CURRENT; copy this into all the
-# board setups and remove it from here.
-strategy_add $PHASE_CHECK freebsd_current_test
 
 board_check_image_size_set ( ) {
     # Check that IMAGE_SIZE is set.
@@ -168,18 +164,18 @@ strategy_add $PHASE_GOODBYE_LWW board_default_goodbye
 # $1: absolute index of partition
 board_is_boot_partition ( ) {
     local ABSINDEX=$1
-    
+
     if [ "`disk_get_var ${ABSINDEX} BOOT`" = "y" ]; then
-	return 0
+        return 0
     else
-	return 1
+        return 1
     fi
 }
 
 # $1: absolute index of partition
 board_is_freebsd_partition ( ) {
     local ABSINDEX=$1
-    
+
     if [ "`disk_get_var ${ABSINDEX} FREEBSD`" = "y" ]; then
 	return 0
     else
@@ -214,9 +210,8 @@ board_mark_partition_for_freebsd_install ( ) {
     local ABSINDEX=$1
 
     if ! board_is_freebsd_partition ${ABSINDEX}; then
-	disk_set_var ${ABSINDEX} FREEBSD "y"
-	
-	strategy_add $PHASE_REPLICATE_FREEBSD freebsd_replicate `board_ufs_mountpoint 1` `board_mountpoint ${ABSINDEX}`
+        disk_set_var ${ABSINDEX} FREEBSD "y"
+        strategy_add $PHASE_REPLICATE_FREEBSD freebsd_replicate `board_ufs_mountpoint 1` `board_mountpoint ${ABSINDEX}`
     fi
 }
 
@@ -251,11 +246,11 @@ board_mountpoint ( ) {
     RELINDEX=`disk_get_var ${ABSINDEX} RELINDEX`
 
     if board_is_boot_partition ${ABSINDEX}; then
-	MOUNTPOINT_PREFIX=${BOARD_BOOT_MOUNTPOINT_PREFIX}
+        MOUNTPOINT_PREFIX=${BOARD_BOOT_MOUNTPOINT_PREFIX}
     elif board_is_freebsd_partition ${ABSINDEX}; then
-	MOUNTPOINT_PREFIX=${BOARD_FREEBSD_MOUNTPOINT_PREFIX}
+        MOUNTPOINT_PREFIX=${BOARD_FREEBSD_MOUNTPOINT_PREFIX}
     else
-	MOUNTPOINT_PREFIX=`eval echo \\$BOARD_${TYPE}_MOUNTPOINT_PREFIX`
+        MOUNTPOINT_PREFIX=`eval echo \\$BOARD_${TYPE}_MOUNTPOINT_PREFIX`
     fi
 
     # For the benefit of users who might be used to certain default
@@ -263,9 +258,9 @@ board_mountpoint ( ) {
     # crochet version, the first partition of a given type has no
     # suffix.
     if [ $RELINDEX -eq 1 ]; then
-	echo ${MOUNTPOINT_PREFIX}
+        echo ${MOUNTPOINT_PREFIX}
     else
-	echo ${MOUNTPOINT_PREFIX}.${RELINDEX}
+        echo ${MOUNTPOINT_PREFIX}.${RELINDEX}
     fi
 }
 
@@ -274,7 +269,7 @@ board_mountpoint ( ) {
 board_fat_mountpoint ( ) {
     local RELINDEX=$1
     local ABSINDEX
-    
+
     ABSINDEX=`disk_get_var FAT ${RELINDEX:-1} ABSINDEX`
     board_mountpoint ${ABSINDEX}
 }
@@ -284,7 +279,7 @@ board_fat_mountpoint ( ) {
 board_ufs_mountpoint ( ) {
     local RELINDEX=$1
     local ABSINDEX
-    
+
     ABSINDEX=`disk_get_var UFS ${RELINDEX:-1} ABSINDEX`
     board_mountpoint ${ABSINDEX}
 }
@@ -297,11 +292,10 @@ board_mount_all ( ) {
     local ABSINDEX
 
     echo "Mounting all file systems:"
-    
+
     ABSINDEX=1
     while [ $ABSINDEX -le $DISK_COUNT ]; do
-	disk_mount `board_mountpoint ${ABSINDEX}` ${ABSINDEX}
-	ABSINDEX=$(( ${ABSINDEX} + 1))
+        disk_mount `board_mountpoint ${ABSINDEX}` ${ABSINDEX}
+        ABSINDEX=$(( ${ABSINDEX} + 1))
     done
 }
-

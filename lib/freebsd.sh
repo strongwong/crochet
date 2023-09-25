@@ -110,7 +110,7 @@ freebsd_src_test ( ) {
         fi
     done
     # FreeBSD source tree has certain directories:
-    for d in bin usr.bin usr.sbin contrib gnu cddl sys sys/arm sys/i386; do
+    for d in bin usr.bin usr.sbin contrib gnu cddl sys; do
         if [ \! -d "$FREEBSD_SRC/$d" ]; then
             echo "This does not look like a FreeBSD source tree."
             echo "Did not find: $FREEBSD_SRC/$d"
