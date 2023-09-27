@@ -204,20 +204,7 @@ run_strategy ( ) {
 # $1 - priority value for sorting; ignored
 # $@ - command to run and arguments.
 __run ( ) {
-    # Set the cwd appropriately depending on the phase we're running.
-    if [ $_CURRENT_PHASE -ge $PHASE_FREEBSD_START ] && [ $_CURRENT_PHASE -le $PHASE_FREEBSD_DONE ]; then
-        # The first UFS partition always gets the initial FreeBSD install
-        BOARD_FREEBSD_MOUNTPOINT=`board_ufs_mountpoint 1`
-        BOARD_CURRENT_MOUNTPOINT=$BOARD_FREEBSD_MOUNTPOINT
-        cd ${BOARD_CURRENT_MOUNTPOINT}
-    elif [ $_CURRENT_PHASE -ge $PHASE_BOOT_START ] && [ $_CURRENT_PHASE -le $PHASE_BOOT_DONE ]; then
-        # The first FAT partition is always considered the boot partition
-        BOARD_BOOT_MOUNTPOINT=`board_fat_mountpoint 1`
-        BOARD_CURRENT_MOUNTPOINT=$BOARD_BOOT_MOUNTPOINT
-        cd ${BOARD_CURRENT_MOUNTPOINT}
-    else
-        cd ${TOPDIR}
-    fi
+    cd ${TOPDIR}
     shift
     if [ $VERBOSE -gt 0 ]; then
         echo "Running: " $@
