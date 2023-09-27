@@ -1,0 +1,72 @@
+/dts-v1/;
+
+/ {
+    description = "FreeBSD BL808 IoT Project";
+    #address-cells = <1>;
+
+    images {
+        kernel {
+            description = "FreeBSD kernel";
+            data = /incbin/("./kernel.bin.lz4");
+            type = "kernel";
+            arch = "riscv";
+            os = "freebsd";
+            compression = "none";
+            load = <0x50000000>;
+            entry = <0x50000000>;
+            hash {
+                algo = "md5";
+            };
+        };
+
+        opensbi {
+            description = "OpenSBI";
+            data = /incbin/("./fw_jump.bin");
+            type = "firmware";
+            arch = "riscv";
+            compression = "none";
+            load = <0x3eff0000>;
+            entry = <0x3eff0000>;
+            hash {
+                algo = "md5";
+            };
+        };
+
+        bl808.dtb {
+            description = "Flattened Device Tree blob";
+            data = /incbin/("./bl808.dtb");
+            type = "flat_dt";
+            arch = "riscv";
+            compression = "none";
+            load = <0x51ff8000>;
+            hash {
+                algo = "md5";
+            };
+        };
+        root {
+            description = "mfsroot";
+            data = /incbin/("./mfsroot.ufs");
+            type = "ramdisk";
+            arch = "riscv";
+            os = "freebsd";
+            compression = "none";
+            hash {
+                algo = "md5";
+            };
+        };
+    };
+
+    configurations {
+        default = "Sipeed_M1s";
+        Sipeed_M1s {
+            description = "FreeBSD kernel, OpenSBI, FDT blob, root";
+            firmware = "opensbi";
+            kernel = "kernel";
+            fdt = "bl808.dtb";
+            ramdisk = "root";
+            hash {
+                algo = "none";
+            };
+        };
+    };
+};
