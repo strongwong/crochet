@@ -30,6 +30,11 @@ board_default_partition_image ( ) {
     return
 }
 
+build_tools ( ) {
+  cc $BOARDDIR/tools/resolve_dep.c -g -lelf -o $BOARDDIR/tools/resolve_dep
+}
+strategy_add $PHASE_BUILD_TOOLS build_tools
+
 build_opensbi ( ) {
     echo ">>>>>>>>>>>>>>>>>>> build OpenSBI <<<<<<<<<<<<<<<<<<<<<"
     gmake -C $OPENSBI_SRC PLATFORM=thead/c910 CROSS_COMPILE=riscv64-none-elf- -j 4 install
@@ -73,9 +78,9 @@ board_build_mfsroot () {
     echo ">>>>>>>>>>>>>>>>>>> cherry pick root <<<<<<<<<<<<<<<<<<<<<"
     mtree -N $FREEBSD_SRC/etc -deU -i -f $BOARDDIR/mtree/bl808.root.dist -p $MFSROOT
     mtree -N $FREEBSD_SRC/etc -deU -i -f $BOARDDIR/mtree/bl808.usr.dist -p $MFSROOT/usr
+
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/bin/* $MFSROOT/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/etc/rc $MFSROOT/etc
-    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/lib/lib* $MFSROOT/lib
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/libexec/ld-elf.so* $MFSROOT/libexec
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/ifconfig $MFSROOT/sbin
@@ -94,11 +99,22 @@ board_build_mfsroot () {
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/vmstat $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/fstat $MFSROOT/usr/bin
 
-    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/lib/librt.so* $MFSROOT/usr/lib
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/share/locale/C.UTF-8/LC_CTYPE $MFSROOT/usr/share/locale/C.UTF-8
+
+    # copy dependent libraries
+    find $MFSROOT/bin $MFSROOT/usr/bin $MFSROOT/sbin -type f | xargs $BOARDDIR/tools/resolve_dep -L"lib:usr/lib" -C $BOARD_FREEBSD_MOUNTPOINT 1>$WORKDIR/dependency.list
+
+    IFS=$'\n'       # make newlines the only separator
+    set -f          # disable globbing
+    for i in $(cat < "$WORKDIR/dependency.list"); do
+      echo "Install: $i"
+      install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/$i $MFSROOT/$i
+    done
 
     # build freebsd root
     makefs -t ffs -R 1m -o label=mfsroot $WORKDIR/mfsroot.ufs $MFSROOT
+    # compress freebsd root
+    mkuzip -dS -A zstd -C 19 -o $WORKDIR/mfsroot.ufs.uzst $WORKDIR/mfsroot.ufs
 }
 PRIORITY=21 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_build_mfsroot
 

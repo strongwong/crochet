@@ -52,6 +52,6 @@
 
   chosen {
     stdout-path = "bl808";
-    bootargs = "vfs.root.mountfrom=ufs:ufs/mfsroot";
+    bootargs = "vfs.root.mountfrom=ufs:BL808/XIP0.uzip";
   };
 };

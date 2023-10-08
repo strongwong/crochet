@@ -45,7 +45,7 @@
         };
         root {
             description = "mfsroot";
-            data = /incbin/("./mfsroot.ufs");
+            data = /incbin/("./mfsroot.ufs.uzst");
             type = "ramdisk";
             arch = "riscv";
             os = "freebsd";
