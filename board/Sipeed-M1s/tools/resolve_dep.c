@@ -50,7 +50,7 @@ library_head = STAILQ_HEAD_INITIALIZER(library_head);
 struct entry {
   char *url;
   STAILQ_ENTRY(entry) entries; /* Tail queue. */
-} *last_process;
+} *last_process = NULL;
 
 struct search_param {
   const char *name;
@@ -84,7 +84,9 @@ insert_library(const char *url)
   return 0;
 }
 
-static int check_executable(const char *fname, int fd, int *is_shlib) {
+static int
+check_executable(const char *fname, int fd, int *is_shlib)
+{
   Elf *elf;
   GElf_Ehdr ehdr;
   Elf_Scn *section;
@@ -219,7 +221,6 @@ checkso(void *ctx, const char *path, const char *basename, struct stat *st)
 static int
 search_library(const char *name)
 {
-  char path[PATH_MAX];
   char *p, *ptr;
   char *libs_path_dup = strdup(libs_path);
   assert(libs_path_dup != NULL);
@@ -298,7 +299,9 @@ usage(void)
   exit(1);
 }
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[])
+{
   int fd, is_shlib;
   struct entry *np;
   int c;
@@ -346,20 +349,17 @@ int main(int argc, char *argv[]) {
 
   /* process all shared librarys */
   while (last_process != STAILQ_LAST(&library_head, entry, entries)) {
-
-    STAILQ_FOREACH(np, &library_head, entries) {
+    np = last_process;
+    STAILQ_FOREACH_FROM(np, &library_head, entries) {
       if ((fd = open(np->url, O_RDONLY | O_VERIFY, 0)) < 0) {
         perror("open");
         return 1;
       }
-
       check_executable(np->url, fd, &is_shlib);
       close(fd);
     }
-
     last_process = STAILQ_LAST(&library_head, entry, entries);
   }
-
 
   STAILQ_FOREACH(np, &library_head, entries) {
     printf("%s\n", np->url);
