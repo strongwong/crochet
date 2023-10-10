@@ -161,7 +161,7 @@ strategy_add ( ) {
         rm -f ${_PHASE_FILE}
     fi
     cat >>${_PHASE_FILE} <<EOF
-__run $_P OPTION=$OPTION OPTIONDIR=$OPTIONDIR BOARDDIR=$BOARDDIR $@
+__run $_P $@
 EOF
     echo ${PHASE} >> ${STRATEGYDIR}/phases.txt
 }

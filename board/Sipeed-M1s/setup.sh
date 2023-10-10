@@ -53,11 +53,11 @@ build_spl ( ) {
     echo ">>>>>>>>>>>>>>>>>>> build SPL <<<<<<<<<<<<<<<<<<<<<"
     env PATH=$BL_MCU_SDK_SRC/toolchain/FreeBSD_amd64/bin:$PATH \
     gmake -C $BL_MCU_SDK_SRC CHIP=bl808 CPU_ID=m0 CMAKE_DIR=$CMAKE_DIR \
-      CROSS_COMPILE=riscv64-unknown-elf- SUPPORT_DUALCORE=y APP=low_load
+      CROSS_COMPILE=riscv64-unknown-elf- SUPPORT_DUALCORE=y APP=low_load_m0
 
     env PATH=$BL_MCU_SDK_SRC/toolchain/FreeBSD_amd64/bin:$PATH \
     gmake -C $BL_MCU_SDK_SRC CHIP=bl808 CPU_ID=d0 CMAKE_DIR=$CMAKE_DIR \
-      CROSS_COMPILE=riscv64-unknown-elf- SUPPORT_DUALCORE=y APP=low_load
+      CROSS_COMPILE=riscv64-unknown-elf- SUPPORT_DUALCORE=y APP=low_load_d0
 }
 strategy_add $PHASE_BUILD_OTHER build_spl
 
@@ -69,6 +69,7 @@ board_default_mount_partitions ( ) {
 
 freebsd_env_setup ( ) {
     BOARD_FREEBSD_MOUNTPOINT=$BOARD_UFS_MOUNTPOINT_PREFIX
+    $MAKE -C $FREEBSD_SRC TARGET_ARCH=$TARGET_ARCH TARGET=$TARGET buildenvvars > $WORKDIR/env.sh
 }
 strategy_add $PHASE_FREEBSD_START freebsd_env_setup
 
@@ -90,6 +91,7 @@ board_build_mfsroot () {
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/mount $MFSROOT/sbin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/sysctl $MFSROOT/sbin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/umount $MFSROOT/sbin
+    #install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/* $MFSROOT/sbin
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/login $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/env $MFSROOT/usr/bin
@@ -98,11 +100,17 @@ board_build_mfsroot () {
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/systat $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/vmstat $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/fstat $MFSROOT/usr/bin
+    #install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/* $MFSROOT/usr/bin
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/share/locale/C.UTF-8/LC_CTYPE $MFSROOT/usr/share/locale/C.UTF-8
+    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/share/misc/termcap* $MFSROOT/usr/share/misc
+
+    # install user app
+    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/local/bin/* $MFSROOT/usr/local/bin
 
     # copy dependent libraries
-    find $MFSROOT/bin $MFSROOT/usr/bin $MFSROOT/sbin -type f | xargs $BOARDDIR/tools/resolve_dep -L"lib:usr/lib" -C $BOARD_FREEBSD_MOUNTPOINT 1>$WORKDIR/dependency.list
+    find $MFSROOT/bin $MFSROOT/usr/bin $MFSROOT/sbin $MFSROOT/usr/local/bin -type f | \
+      xargs $BOARDDIR/tools/resolve_dep -L"lib:usr/lib" -C $BOARD_FREEBSD_MOUNTPOINT 1>$WORKDIR/dependency.list
 
     IFS=$'\n'       # make newlines the only separator
     set -f          # disable globbing
@@ -121,20 +129,31 @@ PRIORITY=21 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_build_mfsroot
 board_build_kernel_img () {
     objcopy -O binary $MFSKERNEL/boot/kernel/kernel $WORKDIR/kernel.bin
     lz4 -9 -f $WORKDIR/kernel.bin $WORKDIR/kernel.bin.lz4
+
     cp $BOARDDIR/whole_img.its $WORKDIR/whole_img.its
     mkimage -f $WORKDIR/whole_img.its $WORKDIR/whole_img.itb
 
     # pack d0 with whole_img.itb image
-    $BOARDDIR/patch_d0.perl "$BL_MCU_SDK_SRC/out/examples/low_load/low_load_bl808_d0.bin" "$WORKDIR/whole_img.itb"
+    cp "$BL_MCU_SDK_SRC/out/examples/low_load_d0/low_load_d0_bl808_d0.bin" "$WORKDIR/low_load_bl808_d0.bin"
+    $BOARDDIR/patch_d0.perl "$WORKDIR/low_load_bl808_d0.bin" "$WORKDIR/whole_img.itb"
 
     mkdir -p $WAREHOSE_DIR
-    cp $BL_MCU_SDK_SRC/out/examples/low_load/low_load_bl808_d0.bin $WAREHOSE_DIR/bl808_freebsd_d0.bin
-    cp $BL_MCU_SDK_SRC/out/examples/low_load/low_load_bl808_m0.bin $WAREHOSE_DIR/bl808_rtos_m0.bin
+    cp $WORKDIR/low_load_bl808_d0.bin $WAREHOSE_DIR/bl808_freebsd_d0.bin
+    cp $BL_MCU_SDK_SRC/out/examples/low_load_m0/low_load_m0_bl808_m0.bin $WAREHOSE_DIR/bl808_rtos_m0.bin
 }
 PRIORITY=30 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_build_kernel_img
 
 board_default_goodbye ( ) {
+    if [ -d $BOARDDIR/overlay ] && [ ! -L $TOPDIR/../overlay ]; then
+        ln -s $BOARDDIR/overlay $TOPDIR/../overlay
+    fi
+    echo
     echo "DONE."
-    echo "BL808 root is: ${WORKDIR}/mfsroot"
+    echo "BL808 RTOS bin is: `realpath $WAREHOSE_DIR/bl808_rtos_m0.bin`"
+    echo "BL808 FreeBSD bin is: `realpath $WAREHOSE_DIR/bl808_freebsd_d0.bin`"
+    echo
+    echo "The application environment has been deployed and you can try it now:"
+    echo "  make apps/helloworld/install"
+    echo "  make"
     echo
 }

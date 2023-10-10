@@ -9,11 +9,17 @@
     lib
     ..
     local
+        bin
+        ..
+        lib
+        ..
     ..
     sbin
     ..
     share
         locale
+        ..
+        misc
         ..
     ..
 ..

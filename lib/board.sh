@@ -47,7 +47,6 @@ board_setup ( ) {
     . $BOARDDIR/setup.sh
 
     PRIORITY=20 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_overlay_files $BOARDDIR
-    BOARDDIR=
 }
 
 board_generate_image_name ( ) {
