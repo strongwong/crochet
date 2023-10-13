@@ -51,14 +51,9 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 TERM=tmux-256color
 export HOME PATH TERM
 
-# show date
-echo ""
-echo " █████   ██████   █████  ██████  ███████ ██████  "
-echo "██   ██ ██  ████ ██   ██ ██   ██ ██      ██   ██ "
-echo " █████  ██ ██ ██  █████  ██████  ███████ ██   ██ "
-echo "██   ██ ████  ██ ██   ██ ██   ██      ██ ██   ██ "
-echo " █████   ██████   █████  ██████  ███████ ██████  "
-echo "                                                 "
-echo ""
+# show motd
+echo
+cat /etc/motd
+echo
 
 /bin/sh

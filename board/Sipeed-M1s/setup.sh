@@ -82,6 +82,7 @@ board_build_mfsroot () {
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/bin/* $MFSROOT/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/etc/rc $MFSROOT/etc
+    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/etc/motd $MFSROOT/etc
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/libexec/ld-elf.so* $MFSROOT/libexec
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/ifconfig $MFSROOT/sbin
