@@ -10,7 +10,7 @@ SRCCONF=${BOARDDIR}/src.conf
 MFSROOT=$WORKDIR/mfsroot
 MFSKERNEL=$WORKDIR/mfskernel
 OPENSBI_SRC=$TOPDIR/../opensbi
-BL_MCU_SDK_SRC=$TOPDIR/../bl_mcu_sdk
+BOUFFALO_SDK_SRC=$TOPDIR/../bouffalo_sdk
 WAREHOSE_DIR=$TOPDIR/../out
 
 # Override default function
@@ -49,15 +49,9 @@ build_device_tree ( ) {
 strategy_add $PHASE_BUILD_OTHER build_device_tree
 
 build_spl ( ) {
-    local CMAKE_DIR=$(dirname $(which cmake))
     echo ">>>>>>>>>>>>>>>>>>> build SPL <<<<<<<<<<<<<<<<<<<<<"
-    env PATH=$BL_MCU_SDK_SRC/toolchain/FreeBSD_amd64/bin:$PATH \
-    gmake -C $BL_MCU_SDK_SRC CHIP=bl808 CPU_ID=m0 CMAKE_DIR=$CMAKE_DIR \
-      CROSS_COMPILE=riscv64-unknown-elf- SUPPORT_DUALCORE=y APP=low_load_m0
-
-    env PATH=$BL_MCU_SDK_SRC/toolchain/FreeBSD_amd64/bin:$PATH \
-    gmake -C $BL_MCU_SDK_SRC CHIP=bl808 CPU_ID=d0 CMAKE_DIR=$CMAKE_DIR \
-      CROSS_COMPILE=riscv64-unknown-elf- SUPPORT_DUALCORE=y APP=low_load_d0
+    env PATH=$TOPDIR/../prebuilts/t-head-xuantie-gcc-freebsd/FreeBSD_amd64/bin:$PATH \
+      gmake -C $BOUFFALO_SDK_SRC/examples/freebsd_loader
 }
 strategy_add $PHASE_BUILD_OTHER build_spl
 
@@ -135,12 +129,12 @@ board_build_kernel_img () {
     mkimage -f $WORKDIR/whole_img.its $WORKDIR/whole_img.itb
 
     # pack d0 with whole_img.itb image
-    cp "$BL_MCU_SDK_SRC/out/examples/low_load_d0/low_load_d0_bl808_d0.bin" "$WORKDIR/low_load_bl808_d0.bin"
+    cp "$BOUFFALO_SDK_SRC/examples/freebsd_loader/loader_d0/build/build_out/loader_d0_bl808_d0.bin" "$WORKDIR/low_load_bl808_d0.bin"
     $BOARDDIR/patch_d0.perl "$WORKDIR/low_load_bl808_d0.bin" "$WORKDIR/whole_img.itb"
 
     mkdir -p $WAREHOSE_DIR
     cp $WORKDIR/low_load_bl808_d0.bin $WAREHOSE_DIR/bl808_freebsd_d0.bin
-    cp $BL_MCU_SDK_SRC/out/examples/low_load_m0/low_load_m0_bl808_m0.bin $WAREHOSE_DIR/bl808_rtos_m0.bin
+    cp $BOUFFALO_SDK_SRC/examples/freebsd_loader/rtos_m0/build/build_out/rtos_m0_bl808_m0.bin $WAREHOSE_DIR/bl808_rtos_m0.bin
 }
 PRIORITY=30 strategy_add $PHASE_FREEBSD_BOARD_INSTALL board_build_kernel_img
 
