@@ -74,7 +74,6 @@ board_build_mfsroot () {
     mtree -N $FREEBSD_SRC/etc -deU -i -f $BOARDDIR/mtree/bl808.root.dist -p $MFSROOT
     mtree -N $FREEBSD_SRC/etc -deU -i -f $BOARDDIR/mtree/bl808.usr.dist -p $MFSROOT/usr
 
-    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/bin/* $MFSROOT/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/etc/rc $MFSROOT/etc
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/etc/motd $MFSROOT/etc
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/libexec/ld-elf.so* $MFSROOT/libexec
@@ -86,7 +85,6 @@ board_build_mfsroot () {
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/mount $MFSROOT/sbin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/sysctl $MFSROOT/sbin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/umount $MFSROOT/sbin
-    #install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/sbin/* $MFSROOT/sbin
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/login $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/env $MFSROOT/usr/bin
@@ -95,13 +93,16 @@ board_build_mfsroot () {
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/systat $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/vmstat $MFSROOT/usr/bin
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/fstat $MFSROOT/usr/bin
-    #install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/bin/* $MFSROOT/usr/bin
 
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/share/locale/C.UTF-8/LC_CTYPE $MFSROOT/usr/share/locale/C.UTF-8
     install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/share/misc/termcap* $MFSROOT/usr/share/misc
 
     # install user app
-    install -C -o root -g wheel -m 555 $BOARD_FREEBSD_MOUNTPOINT/usr/local/bin/* $MFSROOT/usr/local/bin
+    find $BOARD_FREEBSD_MOUNTPOINT/bin -type f | xargs -I {} \
+      install -C -o root -g wheel -m 555 {} $MFSROOT/bin
+
+    find $BOARD_FREEBSD_MOUNTPOINT/usr/local/bin -type f | xargs -I {} \
+      install -C -o root -g wheel -m 555 {} $MFSROOT/usr/local/bin
 
     # copy dependent libraries
     find $MFSROOT/bin $MFSROOT/usr/bin $MFSROOT/sbin $MFSROOT/usr/local/bin -type f | \
